@@ -35,7 +35,6 @@ const App = () => {
     const [selected, setSelected] = useState(0)
   	const [points, setPoints] = useState(anecdotes.map(x => 0))
 
-
 	const incPoints = () => {
 		const tmp = [...points]
 		tmp[selected] += 1
