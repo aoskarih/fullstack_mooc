@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import service from './services/comm'
 
-const Person = ({ person, personSetter }) => {
+const Person = ({ setMessage, person, personSetter }) => {
   const handleClick = () => {
     if (window.confirm(`Do you really want to delete person ${person.name}?`)) {
       service.deletePerson(person.id)
         .then(_ => {
           console.log("Person deleted", person);
+          setMessage(`Deleted ${person.name}`)
           service.getPersons()
             .then(data => {
               personSetter(data)
@@ -24,18 +25,18 @@ const Person = ({ person, personSetter }) => {
   )
 }
 
-const Persons = ({ filterStr, persons, personSetter }) => {
+const Persons = ({ setMessage, filterStr, persons, personSetter }) => {
   const filterShown = () => {
     return persons.filter(p => p.name.includes(filterStr))
   }
   return (
     <>
-      {filterShown().map(p => <Person key={p.name} person={p} personSetter={personSetter}/>)}
+      {filterShown().map(p => <Person key={p.name} setMessage={setMessage} person={p} personSetter={personSetter}/>)}
     </>
   )
 }
 
-const PersonForm = ({persons, personSetter, newNumber, newName, numberSetter, nameSetter}) => {
+const PersonForm = ({ setErrMessage, setMessage, persons, personSetter, newNumber, newName, numberSetter, nameSetter}) => {
   const nameInBook = () => {
     let bool = persons.reduce((p, c) => c.name===newName || p, false)
     return bool
@@ -56,12 +57,16 @@ const PersonForm = ({persons, personSetter, newNumber, newName, numberSetter, na
         service.updatePerson(getId(), personObject)
           .then(response => {
             console.log("Person updated", response)
+            setMessage(`Updated ${newName}`)
             service.getPersons()
               .then(data => {
                 personSetter(data)
               })
             nameSetter('')
             numberSetter('')
+          })
+          .catch(error => {
+            setErrMessage(`Information of ${newName} has already been removed from server.`)
           })
       }
 
@@ -71,7 +76,11 @@ const PersonForm = ({persons, personSetter, newNumber, newName, numberSetter, na
     service.addPerson(personObject)
       .then(response => {
         console.log("Person added", response)
-        personSetter(persons.concat(personObject))
+        setMessage(`Added ${newName}`)
+        service.getPersons()
+          .then(data => {
+            personSetter(data)
+          })
         nameSetter('')
         numberSetter('')
       })
@@ -120,6 +129,36 @@ const Filter = ({ filterStr, filterSetter }) => {
   )
 }
 
+const Notification = ({ message, setMessage, isError }) => {
+  
+  if (message !== null) {
+    setTimeout(() => {
+      setMessage(null)
+    }, 4000)
+  }
+  
+  if (message === null) {
+    return null
+  }
+  
+  const notificationStyle = {
+    color: isError ? 'red' : 'green',
+    background: isError ? 'pink' : 'lightgreen',
+    fontWeight: 'bold',
+    fontSize: 25,
+    borderStyle: 'solid',
+    borderRadius: 3,
+    padding: 10
+  }
+
+  return (
+    <div style={notificationStyle}>
+      {message}
+    </div>
+  )
+}
+
+
 const App = () => {
 
   const [persons, setPersons] = useState([]) 
@@ -127,6 +166,8 @@ const App = () => {
   const [newNumber, setNewNumber] = useState('')
   
   const [filterStr, setFilterStr] = useState('')
+  const [message, setMessage] = useState(null)
+  const [errMessage, setErrMessage] = useState(null);
 
   useEffect(() => {
     service.getPersons().then(data => {
@@ -137,6 +178,9 @@ const App = () => {
   return (
     <div>
       <h1>Phonebook</h1>
+      <Notification message={message} setMessage={setMessage} isError={false}/>
+      <Notification message={errMessage} setMessage={setErrMessage} isError={true}/>
+      <br />
       <Filter  
         filterSetter={setFilterStr}
         filterStr={filterStr}
@@ -148,10 +192,13 @@ const App = () => {
         persons={persons}
         nameSetter={setNewName} 
         numberSetter={setNewNumber} 
-        personSetter={setPersons} 
+        personSetter={setPersons}
+        setMessage={setMessage}
+        setErrMessage={setErrMessage} 
       />
       <h2>Numbers</h2>
       <Persons 
+        setMessage={setMessage}
         persons={persons}
         personSetter={setPersons} 
         filterStr={filterStr} 
