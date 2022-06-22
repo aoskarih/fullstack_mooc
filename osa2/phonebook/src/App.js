@@ -83,6 +83,8 @@ const PersonForm = ({ setErrMessage, setMessage, persons, personSetter, newNumbe
           })
         nameSetter('')
         numberSetter('')
+      }).catch(error => {
+        setErrMessage(error)
       })
 
   }
