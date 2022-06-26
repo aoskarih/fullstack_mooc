@@ -1,0 +1,11 @@
+POST http://localhost:3003/api/users/
+content-type: application/json
+
+{
+  "name": "Ajoneuvo",
+  "username": "vehikkeli",
+  "password": "salasana"
+}
+
+###
+GET http://localhost:3003/api/users/
